@@ -1,0 +1,3 @@
+#!/bin/bash
+zenity --error --text="Eclipse not supported!" 
+exit 0

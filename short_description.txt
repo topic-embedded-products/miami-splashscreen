@@ -1,0 +1,2 @@
+The Miami System on Module (SoM) is based on the Xilinx Zynq™-7015/7030 System on Chip (SoC).
+It is a highly integrated and compact off-the-shelf solution for today’s high performance embedded systems.

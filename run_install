@@ -1,0 +1,128 @@
+#!/bin/bash
+#set -x
+#######################################################################################################################
+
+
+function message_fail_libsh()
+{
+	    local ZENITY_INSTALLED
+        ZENITY_INSTALLED=`dpkg-query -l | grep zenity-common |& awk -F" " '{ print $1 }'`
+
+	    if [ "${ZENITY_INSTALLED}" != "ii" ]
+	    then
+		    echo "Impossible to connect to internet. Please, double check your Internet connection"
+	    else
+		    zenity --error --text "Impossible to connect to internet. Please, double check your Internet connection"
+	    fi
+}
+
+if [ ! -d libsh ]
+then
+	git clone https://github.com/architech-boards/libsh.git
+	[ $? -eq 0 ] || { message_fail_libsh; exit 1; }
+fi
+cd libsh
+git pull
+[ $? -eq 0 ] || { message_fail_libsh; exit 1; }
+source lib.sh
+get_sudo_password ${SUDO_PASSWORD}
+cd ..
+
+
+###########################################################################################################
+# Parameters
+
+YOCTO_DIRECTORY="yocto"
+cd ..
+ROOT_DIRECTORY=`pwd`
+BASEROOT_SDK=${ROOT_DIRECTORY}
+NR_CPUS=`grep -c ^processor /proc/cpuinfo`
+DEFAULT_MACHINE="topic-miami-florida-gen-xc7z030"
+WGET_TIMEOUT=60
+
+REPO_BRANCH="master"
+
+###########################################################################################################
+# Yocto installation
+
+cd ${ROOT_DIRECTORY}
+mkdir -p ${YOCTO_DIRECTORY}
+cd ${YOCTO_DIRECTORY}
+
+if [ ! -d .repo ]
+then
+    repo init -u https://github.com/topic-embedded-products/miami-manifest.git -b ${REPO_BRANCH} -m manifest.xml
+    [ $? -eq 0 ] || { rm -rf .repo; internet_error; }
+fi
+repo sync
+source poky/oe-init-build-env
+
+###########################################################################################################
+# conf/local.conf customization
+
+cd ${ROOT_DIRECTORY}/yocto/build
+set_cpu_localconf ${NR_CPUS} ./conf
+
+if [ -n "`grep "^MACHINE" conf/local.conf`" ]
+then
+    MATCH_LINE=`grep "^MACHINE" conf/local.conf`
+    sed -i "s|^${MATCH_LINE}|MACHINE ??= \"${DEFAULT_MACHINE}\"|g" conf/local.conf
+else
+    echo "MACHINE ??= \"${DEFAULT_MACHINE}\"" >> conf/local.conf
+fi
+
+if [ -n "`grep "^PACKAGE_CLASSES" conf/local.conf`" ]
+then
+    MATCH_LINE=`grep "^PACKAGE_CLASSES" conf/local.conf`
+    sed -i "s|^${MATCH_LINE}|PACKAGE_CLASSES ?= \"package_ipk\"|g" conf/local.conf
+else
+    echo "PACKAGE_CLASSES ?= \"package_ipk\"" >> conf/local.conf
+fi
+
+###########################################################################################################
+# conf/bblayers.conf customization
+
+cd ${ROOT_DIRECTORY}/yocto/build
+TO_MATCH="poky/meta poky/meta-yocto poky/meta-yocto-bsp meta-openembedded/meta-oe meta-topic"
+BBLAYERS=""
+BBLAYERS_FOUND=`sed -n "/^BBLAYERS /,/\"/ p" conf/bblayers.conf | sed "s|BBLAYERS||g" | sed "s|?||g" | sed "s|=||g" | sed "s|\"||g" | sed "s|\n||g" | sed "s|\\\\\\||g"`
+
+for BBLAYER in $BBLAYERS_FOUND
+do
+    BBLAYERS="$BBLAYERS $BBLAYER"
+done
+
+for CURRENT_LAYER in $TO_MATCH
+do
+    LAYER_FOUND="no"
+    for BBLAYER in $BBLAYERS
+    do
+        if [ -n "`echo $BBLAYER | grep "$CURRENT_LAYER$"`" ]
+        then
+            LAYER_FOUND="yes"
+        fi
+    done
+    if [ ${LAYER_FOUND} == "no" ]
+    then
+        CURRENT_LAYER_FULL_PATH=${ROOT_DIRECTORY}/yocto/${CURRENT_LAYER}
+        BBLAYERS="${BBLAYERS} ${CURRENT_LAYER_FULL_PATH}"
+    fi
+done
+
+BBLAYERS="BBLAYERS ?= \"${BBLAYERS}\""
+
+if [ -z "`grep "^BBLAYERS " conf/bblayers.conf`" ]
+then
+    echo "$BBLAYERS" >> conf/bblayers.conf
+else
+    NUMBER_OF_LINES=`sed -n "/^BBLAYERS /,/\"/ {=;}" conf/bblayers.conf | wc -l`
+    if [ $NUMBER_OF_LINES -gt 1 ]
+    then
+        sed -i "/^BBLAYERS /,/\"/ s/^/#/" conf/bblayers.conf
+        echo "$BBLAYERS" >> conf/bblayers.conf
+    else
+        MATCH=`grep "^BBLAYERS " conf/bblayers.conf`
+        sed -i "s|^${MATCH}|${BBLAYERS}|g" conf/bblayers.conf
+    fi
+fi
+
