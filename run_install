@@ -40,7 +40,7 @@ NR_CPUS=`grep -c ^processor /proc/cpuinfo`
 DEFAULT_MACHINE="topic-miami-florida-gen-xc7z030"
 WGET_TIMEOUT=60
 
-REPO_BRANCH="master"
+REPO_BRANCH="dizzy"
 
 ###########################################################################################################
 # Yocto installation
