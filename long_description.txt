@@ -1,2 +1,4 @@
-The Miami System on Module (SoM) is based on the Xilinx Zynq™-7015/7030 System on Chip (SoC).
-It is a highly integrated and compact off-the-shelf solution for today’s high performance embedded systems.
+Miami SoM combines a high performance (ARM-based) application microprocessor with FPGA logic in a single chip. It integrates all system components required to bring the system alive including memory, power supply, debugging and connectivity. Miami provides a best in class platform for balancing both performance and power, making a perfect solution for applications that require high processing power, high speed interfaces, a high level of reliability, the ability to optimize system interfaces, and perform real-time analytics and control.
+
+The module comes with an actively supported main-line fast booting Linux distribution, including a template FPGA implementation connecting to the carrier board connector. Typical application areas are any existing applications that use an applications processor together with an FPGA, including but not limited to (secure) communications, aerospace & defense, audio / video applications, medical and industrial imaging.
+

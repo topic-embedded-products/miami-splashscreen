@@ -1,2 +1,1 @@
-The Miami System on Module (SoM) is based on the Xilinx Zynq™-7015/7030 System on Chip (SoC).
-It is a highly integrated and compact off-the-shelf solution for today’s high performance embedded systems.
+Miami SOM Modules, based on Xilinx Zynq devices, combines dual core processors with FPGA fabric. Common-Of-The-Shelf, ready to use and certified solution to kick-start your application development. It is very suitable for rapid prototyping and production purposes.
